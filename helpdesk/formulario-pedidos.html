@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Pedidos - Helpdesk</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+        
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .buttons-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(149, 165, 166, 0.3);
+        }
+        
+        .btn-purple {
+            background-color: #9b59b6;
+            color: white;
+        }
+        
+        .btn-purple:hover {
+            background-color: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(155, 89, 182, 0.3);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: #2ecc71;
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+        
+        .notification.info {
+            background-color: #3498db;
+        }
+        
+        .pedido-info {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .pedido-info h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            width: 150px;
+            color: #555;
+        }
+        
+        .info-value {
+            flex: 1;
+        }
+        
+        .estado-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .estado-abierto {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .estado-proceso {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .estado-cerrado {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .id-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .id-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .id-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #3498db;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .estado-selector {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .estado-selector label {
+            margin-bottom: 5px;
+        }
+        
+        .btn-actualizar {
+            margin-top: 10px;
+        }
+        
+        .db-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: rgba(46, 204, 113, 0.9);
+            color: white;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+        
+        .sub-equipo-container {
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .sub-equipo-container.show {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .helpdesk-link {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+        }
+        
+        .helpdesk-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .helpdesk-link a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla Principal -->
+        <div id="mainScreen" class="screen active">
+            <h1>Formulario de Pedidos de Trabajo</h1>
+            
+            <div class="buttons-container">
+                <button id="nuevoPedidoBtn" class="btn btn-success">Nuevo Pedido de Trabajo</button>
+                <button id="buscarPedidoBtn" class="btn btn-primary">Buscar Pedido</button>
+            </div>
+            
+            <div class="helpdesk-link">
+                <a href="index.html" target="_blank">🔗 Ver todos los pedidos en el Helpdesk</a>
+                <button id="refreshHelpdeskBtn" class="btn btn-primary" style="margin-top: 10px; width: 100%;">🔄 Refrescar Helpdesk</button>
+            </div>
+        </div>
+        
+        <!-- Pantalla Nuevo Pedido -->
+        <div id="nuevoPedidoScreen" class="screen">
+            <h1>Nuevo Pedido de Trabajo</h1>
+            
+            <div class="id-container">
+                <span class="id-label">ID del Pedido:</span>
+                <span class="id-value" id="pedidoId">80000</span>
+            </div>
+            
+            <form id="pedidoForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre completo</label>
+                        <input type="text" id="nombre" name="nombre" required maxlength="200">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="legajo">Legajo</label>
+                        <input type="text" id="legajo" name="legajo" required maxlength="50">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" name="fecha" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sector">Sector</label>
+                        <select id="sector" name="sector" required>
+                            <option value="">Seleccionar sector</option>
+                            <option value="corrugadora">Corrugadora</option>
+                            <option value="ward_rdc">Ward RDC</option>
+                            <option value="ward_ffg">Ward FFG</option>
+                            <option value="c3000_rdc">C3000 RDC</option>
+                            <option value="c2000">C2000</option>
+                            <option value="cosedoras">Cosedoras</option>
+                            <option value="gral_planta">Gral de Planta</option>
+                            <option value="automotores">Automotores</option>
+                            <option value="expedicion">Expedicion</option>
+                            <option value="jumbo">Jumbo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="subEquipoContainer" class="sub-equipo-container">
+                    <div class="form-group">
+                        <label for="subEquipo">Sub-equipo</label>
+                        <select id="subEquipo" name="subEquipo" required>
+                            <option value="">Seleccionar sub-equipo</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taller">Taller</label>
+                        <select id="taller" name="taller" required>
+                            <option value="">Seleccionar taller</option>
+                            <option value="mecanico">Mecánico</option>
+                            <option value="electrico">Eléctrico</option>
+                            <option value="herreria">Herrería</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipoTarea">Tipo de tarea</label>
+                        <select id="tipoTarea" name="tipoTarea" required>
+                            <option value="">Seleccionar tipo</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                            <option value="seguridad">Seguridad</option>
+                            <option value="mejora">Mejora</option>
+                            <option value="reparacion">Reparación</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="parte">Parte</label>
+                    <input type="text" id="parte" name="parte" required maxlength="200">
+                </div>
+                
+                <div class="form-group">
+                    <label for="problema">Problema</label>
+                    <textarea id="problema" name="problema" placeholder="Describa el problema detectado" required maxlength="2000"></textarea>
+                </div>
+                
+                <div class="buttons-container">
+                    <button type="button" id="cancelarNuevoBtn" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar Pedido</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Pantalla Búsqueda -->
+        <div id="buscarScreen" class="screen">
+            <h1>Buscar Pedido de Trabajo</h1>
+            
+            <form id="buscarForm">
+                <div class="form-group">
+                    <label for="pedidoIdBuscar">ID del Pedido</label>
+                    <input type="text" id="pedidoIdBuscar" name="pedidoIdBuscar" placeholder="Ingrese el ID del pedido" required maxlength="10">
+                </div>
+                
+                <div class="buttons-container">
+                    <button type="button" id="cancelarBuscarBtn" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Pantalla Detalles del Pedido -->
+        <div id="detalleScreen" class="screen">
+            <h1>Detalles del Pedido</h1>
+            
+            <div class="pedido-info">
+                <h2>Información del Pedido</h2>
+                <div class="info-row">
+                    <span class="info-label">ID:</span>
+                    <span class="info-value" id="infoId"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Nombre:</span>
+                    <span class="info-value" id="infoNombre"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Legajo:</span>
+                    <span class="info-value" id="infoLegajo"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Fecha:</span>
+                    <span class="info-value" id="infoFecha"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Sector:</span>
+                    <span class="info-value" id="infoSector"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Sub-equipo:</span>
+                    <span class="info-value" id="infoSubEquipo"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Taller:</span>
+                    <span class="info-value" id="infoTaller"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tipo de tarea:</span>
+                    <span class="info-value" id="infoTipoTarea"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Parte:</span>
+                    <span class="info-value" id="infoParte"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-value" id="infoProblema"></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value" id="infoEstado"></span>
+                </div>
+                
+                <div class="estado-selector">
+                    <label for="nuevoEstado">Actualizar Estado:</label>
+                    <select id="nuevoEstado">
+                        <option value="abierto">Abierto</option>
+                        <option value="proceso">En Proceso</option>
+                        <option value="cerrado">Cerrado</option>
+                    </select>
+                    <button id="actualizarEstadoBtn" class="btn btn-purple btn-actualizar">Actualizar Estado</button>
+                </div>
+            </div>
+            
+            <div class="buttons-container">
+                <button id="volverDetalleBtn" class="btn btn-secondary">Volver</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    <div id="dbStatus" class="db-status">Conectando al Helpdesk...</div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos de la interfaz
+            const mainScreen = document.getElementById('mainScreen');
+            const nuevoPedidoScreen = document.getElementById('nuevoPedidoScreen');
+            const buscarScreen = document.getElementById('buscarScreen');
+            const detalleScreen = document.getElementById('detalleScreen');
+            
+            const nuevoPedidoBtn = document.getElementById('nuevoPedidoBtn');
+            const buscarPedidoBtn = document.getElementById('buscarPedidoBtn');
+            const refreshHelpdeskBtn = document.getElementById('refreshHelpdeskBtn');
+            
+            const cancelarNuevoBtn = document.getElementById('cancelarNuevoBtn');
+            const cancelarBuscarBtn = document.getElementById('cancelarBuscarBtn');
+            const volverDetalleBtn = document.getElementById('volverDetalleBtn');
+            
+            const pedidoForm = document.getElementById('pedidoForm');
+            const buscarForm = document.getElementById('buscarForm');
+            const actualizarEstadoBtn = document.getElementById('actualizarEstadoBtn');
+            const nuevoEstadoSelect = document.getElementById('nuevoEstado');
+            
+            const pedidoIdElement = document.getElementById('pedidoId');
+            const notification = document.getElementById('notification');
+            const dbStatusElement = document.getElementById('dbStatus');
+            
+            // Elementos del formulario
+            const sectorSelect = document.getElementById('sector');
+            const subEquipoContainer = document.getElementById('subEquipoContainer');
+            const subEquipoSelect = document.getElementById('subEquipo');
+            
+            // Variables de estado
+            let pedidoActual = null;
+            let lastId = 79999;
+            
+            // Establecer fecha actual como valor predeterminado
+            const fechaInput = document.getElementById('fecha');
+            const today = new Date().toISOString().split('T')[0];
+            fechaInput.value = today;
+            
+            // Función para mostrar notificaciones
+            function showNotification(message, type = 'success') {
+                notification.textContent = message;
+                notification.className = 'notification show ' + type;
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Función para cambiar de pantalla
+            function showScreen(screenName) {
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                
+                document.getElementById(screenName).classList.add('active');
+            }
+            
+            // Datos de sub-equipos por sector
+            const subEquiposPorSector = {
+                'corrugadora': [
+                    'Apilador inferior', 'Apilador superior', 'Cabezal 1', 'Cabezal 2', 'Cabezal 3',
+                    'Caldera', 'Colero triple', 'Mesa de secado', 'Dual shear', 'Guillotina master',
+                    'Sistema de aire comprimido', 'Retorno condensado', 'Sistema de extraccion de refile',
+                    'Twin 400', 'Cinta transportadora', 'Empalmador', 'Precalentador', 'Servicio externo'
+                ],
+                'ward_rdc': [
+                    'Accustak', 'Atadora mosca AO5', 'Atadora mosca AO6', 'Atadora transpack',
+                    'Cuerpo n1', 'Cuerpo n2', 'Cuerpo n3', 'Cuerpo n4', 'Cuerpos impresores',
+                    'Despaletizador', 'Feed max', 'Introductor', 'Load master', 'Sistema de aire comprimido',
+                    'Sistema electrico', 'Sistema de lavado', 'Servicio externo', 'Sistema de extraccion de refile',
+                    'Transportadores de bancales', 'Transportadores de entrada', 'Transportadores de paquetes', 'Troquelador'
+                ],
+                'ward_ffg': [
+                    'Atadora mosca AO3', 'Atadora mosca AO4', 'Atadora mosca AO5', 'Colero',
+                    'Counter ejector', 'Cuerpo n1', 'Cuerpo n2', 'Cuerpo n3', 'Cuerpo n4',
+                    'Cuerpos impresores', 'Despaletizador', 'Feed max', 'Introductor', 'Load master',
+                    'Plegador', 'Slotter', 'Sistema electrico', 'Sistema de extraccion de refile',
+                    'Servicio externo', 'Transportadores bancales', 'Transportadores de entrada', 'Transportadores de paquetes', 'Troquelador'
+                ],
+                'c3000_rdc': [
+                    'Atadora mosca', 'Atadora transpack', 'Atadora mosca AO5', 'Cuerpo n1',
+                    'Cuerpo n2', 'Cuerpo n3', 'Cuerpo n4', 'Cuerpo n5', 'Cuerpos impresores',
+                    'Despaletizador', 'Expedicion', 'Feed master', 'Introductor', 'Loadmaster',
+                    'Servicio de aire comprimido', 'Servicio externo', 'Sistema de extraccion de refile',
+                    'Sistema electrico', 'Stacker geomartin', 'Transportadores bancales', 'Transportadores de entrada',
+                    'Transportadores paquetes', 'Troquelador'
+                ],
+                'c2000': [
+                    'Atadora mosca AO3', 'Atadora mosca AO4', 'Atadora mosca AO5', 'Colero',
+                    'Counter ejector', 'Cuerpo n1', 'Cuerpo n2', 'Cuerpo 3', 'Cuerpo n4',
+                    'Cuerpos impresores', 'Despaletizador', 'Expedicion', 'Feed master', 'Introductor',
+                    'Loadmaster', 'Plegador', 'Servicio aire comprimido', 'Servicio externo',
+                    'Sistema electrico', 'Sistema extraccion de refile', 'Slotter', 'Transportadores de bancales',
+                    'Transportadores de entrada', 'Transportadores paquetes'
+                ],
+                'cosedoras': [
+                    'Bahmuller n1', 'Bahmuller n2', 'Bahmuller n3'
+                ],
+                'gral_planta': [
+                    'Balanza de camiones', 'Baños', 'Baños exterior', 'Caldera', 'Calle de camiones',
+                    'Camara de rebaje de gas', 'Camaras de seguridad', 'Cargador de baterias Hyundai',
+                    'Cargador de baterias Toyota', 'Carro brazo', 'Carro NE', 'Carro tijera', 'Comedor',
+                    'Compresores', 'Sector corrugadora', 'Cosedoras', 'Deposito de bobinas',
+                    'Deposito de tintas', 'Dispenser', 'Enfardadora', 'Entrepiso', 'Estibadora',
+                    'Extractan de refile', 'Galpon', 'Grabados', 'Grupo electrogeno', 'Impresoras generales',
+                    'Sector jumbo', 'Sector laboratorio', 'Lavadero autoelevadores', 'Luces de emergencia',
+                    'Montacargas "grabados"', 'Oficina expedicion', 'Oficina gerencia', 'Oficina produccion',
+                    'Ofician diseño y desarrollo', 'Oficina tecnica', 'Oficina de ventas', 'Oficinas de administracion',
+                    'P.A.T', 'Pañol', 'Perimetro exterior', 'Porton ingreso', 'Puertas red de agua',
+                    'Red de gas', 'Red de incendio', 'Sala de bombas', 'Sala transformadores',
+                    'Sala capacitacitacion', 'Sector troqueles', 'Sendas peatonales', 'Servicios',
+                    'Tablero general', 'Taller automotores', 'Taller herreria', 'Taller electrico',
+                    'Taller mecanico', 'Tanque principal de agua', 'Techo de planta', 'Tratamiento de afluentes',
+                    'Ventiladores', 'Vestuarios', 'Vigilancia', 'Sistema de aire comprimido'
+                ],
+                'automotores': [
+                    'Back-up', 'Carro pluma', 'Carro tijera', 'Caterpillar', 'Desmalezadora Honda 450 n3',
+                    'Desmalezadora Honda 450 n4', 'Hyundai n24', 'Hyundai n25', 'Maximal n13', 'Sprinter 310',
+                    'Sprinter 415', 'Sprinter 96', 'Tanque combustible', 'TCM FD 25 andino', 'TCM FD 25 n10',
+                    'TCM FD 25 n2', 'TCM FD 25 n25', 'TCM FD 25 n7', 'TCM FD 25 n8', 'TCM FD 25 n9',
+                    'TCM FD 45 n11', 'TCM FD 45 n12', 'TCM FD 45 n14', 'TCM FD 45 n25', 'TCM FD 45 n27',
+                    'TCM FD 45 n3', 'TCM FD 45 n4', 'TCM n15', 'Toyota 16', 'Toyota 17', 'Toyota 18',
+                    'Toyota 19', 'Toyota 20', 'Toyota 21', 'Toyota 22', 'Toyota 23'
+                ],
+                'expedicion': [
+                    'Carro n.e', 'Cinta tranportadora', 'Cortinas', 'Mete pallets', 'Rodillera',
+                    'Strechadora blanca', 'Strechadora MEGA', 'Zunchadora mosca'
+                ],
+                'jumbo': [
+                    'Apilador', 'Cuerpo n1', 'Cuerpo n2', 'Cuerpos impresores', 'Introductor',
+                    'Servicio aire comprimido', 'Servicio externo', 'Sistema electrico',
+                    'Sistema extraccion refile', 'Slotter 1', 'Slotter 2', 'Stacker',
+                    'Transportadores entradas', 'Transportadores paquetes', 'Troquelador'
+                ]
+            };
+            
+            // Evento para cambiar el sector
+            sectorSelect.addEventListener('change', function() {
+                const sector = sectorSelect.value;
+                
+                subEquipoSelect.innerHTML = '<option value="">Seleccionar sub-equipo</option>';
+                
+                if (sector && subEquiposPorSector[sector]) {
+                    subEquipoContainer.classList.add('show');
+                    
+                    subEquiposPorSector[sector].forEach(subEquipo => {
+                        const option = document.createElement('option');
+                        option.value = subEquipo.toLowerCase().replace(/\s+/g, '_');
+                        option.textContent = subEquipo;
+                        subEquipoSelect.appendChild(option);
+                    });
+                } else {
+                    subEquipoContainer.classList.remove('show');
+                }
+            });
+            
+            // Función para obtener el último ID desde localStorage
+            function getLastId() {
+                try {
+                    const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                    if (pedidos.length > 0) {
+                        const maxId = Math.max(...pedidos.map(p => p.id));
+                        lastId = maxId;
+                        pedidoIdElement.textContent = lastId + 1;
+                    }
+                } catch (error) {
+                    console.error('Error al obtener el último ID:', error);
+                }
+            }
+            
+            // Función para guardar un pedido en localStorage
+            function savePedido(pedido) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                        const newId = lastId + 1;
+                        const pedidoConId = { 
+                            ...pedido, 
+                            id: newId, 
+                            estado: pedido.estado || 'abierto' 
+                        };
+                        
+                        pedidos.push(pedidoConId);
+                        localStorage.setItem('base_pedidos', JSON.stringify(pedidos));
+                        
+                        // Disparar evento personalizado para notificar al helpdesk
+                        const event = new CustomEvent('pedidoGuardado', {
+                            detail: { pedido: pedidoConId, totalPedidos: pedidos.length }
+                        });
+                        window.dispatchEvent(event);
+                        
+                        // También disparar evento de storage para compatibilidad
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'base_pedidos',
+                            newValue: JSON.stringify(pedidos),
+                            oldValue: JSON.stringify(pedidos.slice(0, -1))
+                        }));
+                        
+                        lastId = newId;
+                        pedidoIdElement.textContent = lastId + 1;
+                        
+                        resolve(pedidoConId);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+            
+            // Función para buscar un pedido por ID
+            function getPedidoById(id) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                        const pedido = pedidos.find(p => p.id === parseInt(id));
+                        resolve(pedido);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+            
+            // Función para actualizar un pedido
+            function updatePedido(pedido) {
+                try {
+                    const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                    const index = pedidos.findIndex(p => p.id === pedido.id);
+                    
+                    if (index !== -1) {
+                        pedidos[index] = pedido;
+                        localStorage.setItem('base_pedidos', JSON.stringify(pedidos));
+                        return true;
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('Error al actualizar el pedido:', error);
+                    return false;
+                }
+            }
+            
+            // Eventos para cambiar de pantalla
+            nuevoPedidoBtn.addEventListener('click', function() {
+                getLastId();
+                showScreen('nuevoPedidoScreen');
+            });
+            
+            buscarPedidoBtn.addEventListener('click', function() {
+                showScreen('buscarScreen');
+            });
+
+            refreshHelpdeskBtn.addEventListener('click', function() {
+                showNotification('Refrescando pedidos del Helpdesk...', 'info');
+                // Aquí iría la lógica para refrescar el Helpdesk
+                // Por ejemplo, podrías hacer una llamada AJAX a un endpoint del backend
+                // que actualice los pedidos en localStorage.
+                // Para simularlo, simplemente esperamos un segundo y mostramos una notificación.
+                setTimeout(() => {
+                    showNotification('Helpdesk refrescado. Los pedidos se han actualizado.', 'success');
+                }, 1000);
+            });
+            
+            cancelarNuevoBtn.addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que deseas cancelar? Los datos no guardados se perderán.')) {
+                    pedidoForm.reset();
+                    fechaInput.value = today;
+                    subEquipoContainer.classList.remove('show');
+                    showScreen('mainScreen');
+                }
+            });
+            
+            cancelarBuscarBtn.addEventListener('click', function() {
+                buscarForm.reset();
+                showScreen('mainScreen');
+            });
+            
+            volverDetalleBtn.addEventListener('click', function() {
+                showScreen('mainScreen');
+            });
+            
+            // Evento para enviar el formulario de nuevo pedido
+            pedidoForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(pedidoForm);
+                const pedidoData = {};
+                for (let [key, value] of formData.entries()) {
+                    pedidoData[key] = value;
+                }
+                
+                try {
+                    const creado = await savePedido(pedidoData);
+                    showNotification(`¡Pedido guardado correctamente! ID: ${creado.id}`, 'success');
+                    
+                    // Verificar que se guardó correctamente
+                    const pedidosGuardados = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                    const pedidoEncontrado = pedidosGuardados.find(p => p.id === creado.id);
+                    
+                    if (pedidoEncontrado) {
+                        showNotification(`Pedido sincronizado en la base de datos. Total: ${pedidosGuardados.length} pedidos`, 'info');
+                    }
+                    
+                    pedidoForm.reset();
+                    fechaInput.value = today;
+                    subEquipoContainer.classList.remove('show');
+                    
+                    setTimeout(() => {
+                        showScreen('mainScreen');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Error al guardar el pedido:', err);
+                    showNotification('Error al guardar el pedido', 'error');
+                }
+            });
+            
+            // Evento para buscar el pedido
+            buscarForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const pedidoId = document.getElementById('pedidoIdBuscar').value;
+                
+                getPedidoById(pedidoId)
+                    .then(pedido => {
+                        if (pedido) {
+                            pedidoActual = pedido;
+                            
+                            document.getElementById('infoId').textContent = pedido.id;
+                            document.getElementById('infoNombre').textContent = pedido.nombre;
+                            document.getElementById('infoLegajo').textContent = pedido.legajo;
+                            document.getElementById('infoFecha').textContent = pedido.fecha;
+                            document.getElementById('infoSector').textContent = getSectorTexto(pedido.sector);
+                            document.getElementById('infoSubEquipo').textContent = getSubEquipoTexto(pedido.sector, pedido.subEquipo);
+                            document.getElementById('infoTaller').textContent = getTallerTexto(pedido.taller);
+                            document.getElementById('infoTipoTarea').textContent = getTipoTareaTexto(pedido.tipoTarea);
+                            document.getElementById('infoParte').textContent = pedido.parte;
+                            document.getElementById('infoProblema').textContent = pedido.problema;
+                            
+                            const estadoElement = document.getElementById('infoEstado');
+                            estadoElement.innerHTML = '';
+                            const badge = document.createElement('span');
+                            
+                            const estado = pedido.estado || 'abierto';
+                            
+                            badge.className = 'estado-badge estado-' + estado;
+                            badge.textContent = getEstadoTexto(estado);
+                            estadoElement.appendChild(badge);
+                            
+                            nuevoEstadoSelect.value = estado;
+                            
+                            showScreen('detalleScreen');
+                            
+                            showNotification('Pedido encontrado', 'success');
+                        } else {
+                            showNotification('No se encontró un pedido con ese ID', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al buscar el pedido:', error);
+                        showNotification('Error al buscar el pedido', 'error');
+                    });
+            });
+            
+            // Evento para actualizar el estado
+            actualizarEstadoBtn.addEventListener('click', function() {
+                if (!pedidoActual) return;
+                
+                const nuevoEstado = nuevoEstadoSelect.value;
+                
+                pedidoActual.estado = nuevoEstado;
+                
+                if (updatePedido(pedidoActual)) {
+                    const estadoElement = document.getElementById('infoEstado');
+                    estadoElement.innerHTML = '';
+                    const badge = document.createElement('span');
+                    badge.className = 'estado-badge estado-' + nuevoEstado;
+                    badge.textContent = getEstadoTexto(nuevoEstado);
+                    estadoElement.appendChild(badge);
+                    
+                    showNotification('Estado actualizado correctamente', 'success');
+                } else {
+                    showNotification('Error al actualizar el estado', 'error');
+                }
+            });
+            
+            // Funciones auxiliares para mostrar texto
+            function getEstadoTexto(estado) {
+                const estados = {
+                    'abierto': 'Abierto',
+                    'proceso': 'En Proceso',
+                    'cerrado': 'Cerrado'
+                };
+                return estados[estado] || estado;
+            }
+            
+            function getSectorTexto(sector) {
+                const sectores = {
+                    'corrugadora': 'Corrugadora',
+                    'ward_rdc': 'Ward RDC',
+                    'ward_ffg': 'Ward FFG',
+                    'c3000_rdc': 'C3000 RDC',
+                    'c2000': 'C2000',
+                    'cosedoras': 'Cosedoras',
+                    'gral_planta': 'Gral de Planta',
+                    'automotores': 'Automotores',
+                    'expedicion': 'Expedicion',
+                    'jumbo': 'Jumbo'
+                };
+                return sectores[sector] || sector;
+            }
+            
+            function getSubEquipoTexto(sector, subEquipo) {
+                if (!sector || !subEquipo) return '';
+                
+                if (subEquiposPorSector[sector]) {
+                    const subEquipoObj = subEquiposPorSector[sector].find(
+                        item => item.toLowerCase().replace(/\s+/g, '_') === subEquipo
+                    );
+                    return subEquipoObj || subEquipo;
+                }
+                
+                return subEquipo;
+            }
+            
+            function getTallerTexto(taller) {
+                const talleres = {
+                    'mecanico': 'Mecánico',
+                    'electrico': 'Eléctrico',
+                    'herreria': 'Herrería',
+                    'otros': 'Otros'
+                };
+                return talleres[taller] || taller;
+            }
+            
+            function getTipoTareaTexto(tipoTarea) {
+                const tipos = {
+                    'mantenimiento': 'Mantenimiento',
+                    'seguridad': 'Seguridad',
+                    'mejora': 'Mejora',
+                    'reparacion': 'Reparación'
+                };
+                return tipos[tipoTarea] || tipoTarea;
+            }
+            
+            // Inicializar la aplicación
+            getLastId();
+            dbStatusElement.textContent = 'Helpdesk: Conectado';
+            dbStatusElement.style.backgroundColor = 'rgba(46, 204, 113, 0.9)';
+            
+            // Función para actualizar el estado de la base de datos
+            function updateDBStatus() {
+                try {
+                    const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                    const totalPedidos = pedidos.length;
+                    const pedidosAbiertos = pedidos.filter(p => p.estado === 'abierto').length;
+                    const pedidosEnProceso = pedidos.filter(p => p.estado === 'proceso').length;
+                    const pedidosCerrados = pedidos.filter(p => p.estado === 'cerrado').length;
+                    
+                    dbStatusElement.innerHTML = `
+                        Helpdesk: Conectado<br>
+                        Total: ${totalPedidos} | Abiertos: ${pedidosAbiertos} | En Proceso: ${pedidosEnProceso} | Cerrados: ${pedidosCerrados}
+                    `;
+                } catch (error) {
+                    dbStatusElement.textContent = 'Helpdesk: Error en la base de datos';
+                    dbStatusElement.style.backgroundColor = 'rgba(231, 76, 60, 0.9)';
+                }
+            }
+            
+            // Actualizar estado cada 5 segundos
+            setInterval(updateDBStatus, 5000);
+            updateDBStatus(); // Actualizar inmediatamente
+            
+            showNotification('Formulario conectado al Helpdesk', 'success');
+        });
+    </script>
+</body>
+</html>

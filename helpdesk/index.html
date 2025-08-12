@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Helpdesk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .filters {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 200px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .actions {
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        .tickets-table {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .tickets-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tickets-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .tickets-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-open { color: #28a745; }
+        .status-pending { color: #ffc107; }
+        .status-claimed { color: #dc3545; }
+        .status-closed { color: #6c757d; }
+
+        .priority-high { color: #dc3545; }
+        .priority-medium { color: #ffc107; }
+        .priority-low { color: #28a745; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-group {
+                display: block;
+                margin-bottom: 1rem;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>Sistema de Helpdesk</h1>
+        </header>
+
+        <div class="container">
+            <!-- Filtros -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="statusFilter">Estado:</label>
+                    <select id="statusFilter" onchange="filterTickets()">
+                        <option value="">Todos los estados</option>
+                        <option value="open">Abierto</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="claimed">Reclamado</option>
+                        <option value="closed">Cerrado</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="priorityFilter">Prioridad:</label>
+                    <select id="priorityFilter" onchange="filterTickets()">
+                        <option value="">Todas las prioridades</option>
+                        <option value="high">Alta</option>
+                        <option value="medium">Media</option>
+                        <option value="low">Baja</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="searchFilter">Buscar:</label>
+                    <input type="text" id="searchFilter" placeholder="Buscar en tickets..." onkeyup="filterTickets()">
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total de Tickets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="openCount">0</div>
+                    <div class="stat-label">Abiertos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingCount">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="closedCount">0</div>
+                    <div class="stat-label">Cerrados</div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="actions">
+                <button class="btn" onclick="showCreateForm()">Nuevo Ticket</button>
+            </div>
+
+            <!-- Tabla de Tickets -->
+            <div class="tickets-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Solicitante</th>
+                            <th>Asignado a</th>
+                            <th>Estado</th>
+                            <th>Prioridad</th>
+                            <th>Fecha Creación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTableBody">
+                        <!-- Los tickets se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal para Crear/Editar Ticket -->
+        <div id="ticketModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle">Nuevo Ticket</h2>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                
+                <form id="ticketForm" onsubmit="saveTicket(event)">
+                    <input type="hidden" id="ticketId">
+                    
+                    <div class="form-group">
+                        <label for="ticketTitle">Título *</label>
+                        <input type="text" id="ticketTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ticketDescription">Descripción *</label>
+                        <textarea id="ticketDescription" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ticketRequester">Solicitante *</label>
+                            <input type="text" id="ticketRequester" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ticketAssignedTo">Asignado a *</label>
+                            <input type="text" id="ticketAssignedTo" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ticketPriority">Prioridad</label>
+                        <select id="ticketPriority">
+                            <option value="low">Baja</option>
+                            <option value="medium" selected>Media</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ticketTags">Etiquetas</label>
+                        <input type="text" id="ticketTags" placeholder="Separar con comas">
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 1rem;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="btn">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Cambiar Estado -->
+        <div id="statusModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Cambiar Estado</h2>
+                    <span class="close" onclick="closeStatusModal()">&times;</span>
+                </div>
+                
+                <form onsubmit="changeStatus(event)">
+                    <input type="hidden" id="statusTicketId">
+                    
+                    <div class="form-group">
+                        <label>Nuevo Estado:</label>
+                        <div style="margin-top: 0.5rem;">
+                            <button type="button" class="btn" onclick="selectStatus('open')">Abierto</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectStatus('pending')">Pendiente</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectStatus('claimed')">Reclamado</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectStatus('closed')">Cerrado</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="statusComment">Comentario (opcional):</label>
+                        <textarea id="statusComment" rows="3" placeholder="Comentario sobre el cambio..."></textarea>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 1rem;">
+                        <button type="button" class="btn btn-secondary" onclick="closeStatusModal()">Cancelar</button>
+                        <button type="submit" class="btn">Cambiar Estado</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Historial -->
+        <div id="historyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="historyTitle">Historial de Cambios</h2>
+                    <span class="close" onclick="closeHistoryModal()">&times;</span>
+                </div>
+                
+                <div id="historyContent">
+                    <!-- El historial se cargará aquí -->
+                </div>
+                
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button class="btn btn-secondary" onclick="closeHistoryModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Almacenamiento de datos
+        let tickets = [];
+        let statusChanges = [];
+        let currentFilters = {};
+        let selectedStatus = 'open';
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            renderTickets();
+            updateStatistics();
+        });
+
+        // Gestión de datos
+        function loadData() {
+            const savedTickets = localStorage.getItem('helpdesk_tickets');
+            const savedChanges = localStorage.getItem('helpdesk_status_changes');
+            
+            if (savedTickets) {
+                tickets = JSON.parse(savedTickets).map(ticket => ({
+                    ...ticket,
+                    createdAt: new Date(ticket.createdAt),
+                    updatedAt: new Date(ticket.updatedAt),
+                    closedAt: ticket.closedAt ? new Date(ticket.closedAt) : undefined
+                }));
+            } else {
+                // Datos de ejemplo
+                tickets = [
+                    {
+                        id: '100',
+                        title: 'Problema con el sistema de login',
+                        description: 'Los usuarios no pueden acceder al sistema con sus credenciales',
+                        requester: 'Juan Pérez',
+                        assignedTo: 'Equipo de IT',
+                        status: 'open',
+                        priority: 'high',
+                        tags: ['login', 'acceso', 'urgente'],
+                        createdAt: new Date('2024-01-15T10:00:00'),
+                        updatedAt: new Date('2024-01-15T10:00:00')
+                    },
+                    {
+                        id: '101',
+                        title: 'Solicitud de nueva funcionalidad',
+                        description: 'Se necesita agregar un botón de exportar en el reporte mensual',
+                        requester: 'María García',
+                        assignedTo: 'Equipo de Desarrollo',
+                        status: 'pending',
+                        priority: 'medium',
+                        tags: ['funcionalidad', 'reporte', 'exportar'],
+                        createdAt: new Date('2024-01-14T14:30:00'),
+                        updatedAt: new Date('2024-01-14T14:30:00')
+                    },
+                    {
+                        id: '102',
+                        title: 'Error en la base de datos',
+                        description: 'Se han reportado errores de conexión intermitentes',
+                        requester: 'Carlos López',
+                        assignedTo: 'DBA',
+                        status: 'claimed',
+                        priority: 'high',
+                        tags: ['base de datos', 'conexión', 'error'],
+                        createdAt: new Date('2024-01-13T09:15:00'),
+                        updatedAt: new Date('2024-01-13T09:15:00')
+                    }
+                ];
+                saveTickets();
+            }
+            
+            if (savedChanges) {
+                statusChanges = JSON.parse(savedChanges).map(change => ({
+                    ...change,
+                    changedAt: new Date(change.changedAt)
+                }));
+            } else {
+                // Crear cambios de estado iniciales
+                statusChanges = tickets.map(ticket => ({
+                    id: generateId(),
+                    ticketId: ticket.id,
+                    fromStatus: 'open',
+                    toStatus: ticket.status,
+                    changedBy: 'Sistema',
+                    changedAt: ticket.createdAt,
+                    comment: 'Ticket creado'
+                }));
+                saveStatusChanges();
+            }
+        }
+
+        function saveTickets() {
+            localStorage.setItem('helpdesk_tickets', JSON.stringify(tickets));
+        }
+
+        function saveStatusChanges() {
+            localStorage.setItem('helpdesk_status_changes', JSON.stringify(statusChanges));
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Funciones de UI
+        function showCreateForm() {
+            document.getElementById('modalTitle').textContent = 'Nuevo Ticket';
+            document.getElementById('ticketForm').reset();
+            document.getElementById('ticketId').value = '';
+            document.getElementById('ticketModal').style.display = 'block';
+        }
+
+        function showEditForm(ticket) {
+            document.getElementById('modalTitle').textContent = 'Editar Ticket';
+            document.getElementById('ticketId').value = ticket.id;
+            document.getElementById('ticketTitle').value = ticket.title;
+            document.getElementById('ticketDescription').value = ticket.description;
+            document.getElementById('ticketRequester').value = ticket.requester;
+            document.getElementById('ticketAssignedTo').value = ticket.assignedTo;
+            document.getElementById('ticketPriority').value = ticket.priority;
+            document.getElementById('ticketTags').value = ticket.tags.join(', ');
+            document.getElementById('ticketModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('ticketModal').style.display = 'none';
+        }
+
+        function saveTicket(event) {
+            event.preventDefault();
+            
+            const ticketId = document.getElementById('ticketId').value;
+            const ticketData = {
+                title: document.getElementById('ticketTitle').value,
+                description: document.getElementById('ticketDescription').value,
+                requester: document.getElementById('ticketRequester').value,
+                assignedTo: document.getElementById('ticketAssignedTo').value,
+                priority: document.getElementById('ticketPriority').value,
+                tags: document.getElementById('ticketTags').value.split(',').map(tag => tag.trim()).filter(tag => tag)
+            };
+            
+            if (ticketId) {
+                // Editar ticket existente
+                const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+                if (ticketIndex !== -1) {
+                    tickets[ticketIndex] = {
+                        ...tickets[ticketIndex],
+                        ...ticketData,
+                        updatedAt: new Date()
+                    };
+                }
+            } else {
+                // Crear nuevo ticket
+                const newTicket = {
+                    id: generateId(),
+                    ...ticketData,
+                    status: 'open',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+                tickets.push(newTicket);
+                
+                // Registrar cambio de estado
+                statusChanges.push({
+                    id: generateId(),
+                    ticketId: newTicket.id,
+                    fromStatus: 'open',
+                    toStatus: 'open',
+                    changedBy: 'Usuario',
+                    changedAt: new Date(),
+                    comment: 'Ticket creado'
+                });
+            }
+            
+            saveTickets();
+            saveStatusChanges();
+            closeModal();
+            renderTickets();
+            updateStatistics();
+        }
+
+        function deleteTicket(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+                tickets = tickets.filter(t => t.id !== id);
+                statusChanges = statusChanges.filter(c => c.ticketId !== id);
+                saveTickets();
+                saveStatusChanges();
+                renderTickets();
+                updateStatistics();
+            }
+        }
+
+        function showStatusModal(ticketId) {
+            document.getElementById('statusTicketId').value = ticketId;
+            document.getElementById('statusModal').style.display = 'block';
+            selectedStatus = 'open';
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').style.display = 'none';
+        }
+
+        function selectStatus(status) {
+            selectedStatus = status;
+        }
+
+        function changeStatus(event) {
+            event.preventDefault();
+            
+            const ticketId = document.getElementById('statusTicketId').value;
+            const comment = document.getElementById('statusComment').value;
+            
+            const ticket = tickets.find(t => t.id === ticketId);
+            if (ticket) {
+                const oldStatus = ticket.status;
+                ticket.status = selectedStatus;
+                ticket.updatedAt = new Date();
+                
+                if (selectedStatus === 'closed') {
+                    ticket.closedAt = new Date();
+                }
+                
+                // Registrar cambio de estado
+                statusChanges.push({
+                    id: generateId(),
+                    ticketId: ticketId,
+                    fromStatus: oldStatus,
+                    toStatus: selectedStatus,
+                    changedBy: 'Usuario',
+                    changedAt: new Date(),
+                    comment: comment || undefined
+                });
+                
+                saveTickets();
+                saveStatusChanges();
+                closeStatusModal();
+                renderTickets();
+                updateStatistics();
+            }
+        }
+
+        function showHistory(ticketId) {
+            const ticket = tickets.find(t => t.id === ticketId);
+            const changes = statusChanges.filter(c => c.ticketId === ticketId)
+                .sort((a, b) => b.changedAt - a.changedAt);
+            
+            document.getElementById('historyTitle').textContent = `Historial - Ticket #${ticketId}`;
+            
+            let historyHTML = '';
+            if (changes.length > 0) {
+                changes.forEach(change => {
+                    historyHTML += `
+                        <div style="padding: 16px; border-left: 3px solid #e5e7eb; margin-bottom: 16px; background: #f9fafb;">
+                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">
+                                ${formatDate(change.changedAt)} - ${change.changedBy}
+                            </div>
+                            <div style="font-weight: 500;">
+                                Estado cambiado de <strong>${getStatusLabel(change.fromStatus)}</strong> a 
+                                <strong>${getStatusLabel(change.toStatus)}</strong>
+                                ${change.comment ? `<div style="margin-top: 8px; font-style: italic;">Comentario: ${change.comment}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                historyHTML = '<div style="text-align: center; padding: 32px; color: #6b7280;">No hay historial de cambios</div>';
+            }
+            
+            document.getElementById('historyContent').innerHTML = historyHTML;
+            document.getElementById('historyModal').style.display = 'block';
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        // Filtrado
+        function filterTickets() {
+            currentFilters.status = document.getElementById('statusFilter').value;
+            currentFilters.priority = document.getElementById('priorityFilter').value;
+            currentFilters.search = document.getElementById('searchFilter').value;
+            renderTickets();
+        }
+
+        // Renderizado
+        function renderTickets() {
+            let filteredTickets = [...tickets];
+            
+            // Aplicar filtros
+            if (currentFilters.status) {
+                filteredTickets = filteredTickets.filter(t => t.status === currentFilters.status);
+            }
+            
+            if (currentFilters.priority) {
+                filteredTickets = filteredTickets.filter(t => t.priority === currentFilters.priority);
+            }
+            
+            if (currentFilters.search) {
+                const searchTerm = currentFilters.search.toLowerCase();
+                filteredTickets = filteredTickets.filter(t => 
+                    t.title.toLowerCase().includes(searchTerm) ||
+                    t.description.toLowerCase().includes(searchTerm) ||
+                    t.requester.toLowerCase().includes(searchTerm) ||
+                    t.assignedTo.toLowerCase().includes(searchTerm) ||
+                    t.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            const tableBody = document.getElementById('ticketsTableBody');
+            tableBody.innerHTML = '';
+            
+            if (filteredTickets.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 32px;">No se encontraron tickets</td></tr>';
+                return;
+            }
+            
+            filteredTickets.forEach(ticket => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>#${ticket.id}</td>
+                    <td>${ticket.title}</td>
+                    <td>${ticket.requester}</td>
+                    <td>${ticket.assignedTo}</td>
+                    <td><span class="status-${ticket.status}">${getStatusLabel(ticket.status)}</span></td>
+                    <td><span class="priority-${ticket.priority}">${getPriorityLabel(ticket.priority)}</span></td>
+                    <td>${formatDate(ticket.createdAt)}</td>
+                    <td>
+                        <button class="btn" onclick="showStatusModal('${ticket.id}')">Cambiar Estado</button>
+                        <button class="btn btn-secondary" onclick="showEditForm(${JSON.stringify(ticket).replace(/"/g, '&quot;')})">Editar</button>
+                        <button class="btn btn-secondary" onclick="showHistory('${ticket.id}')">Historial</button>
+                        <button class="btn btn-secondary" onclick="deleteTicket('${ticket.id}')">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalCount').textContent = tickets.length;
+            document.getElementById('openCount').textContent = tickets.filter(t => t.status === 'open').length;
+            document.getElementById('pendingCount').textContent = tickets.filter(t => t.status === 'pending').length;
+            document.getElementById('closedCount').textContent = tickets.filter(t => t.status === 'closed').length;
+        }
+
+        // Funciones de utilidad
+        function getStatusLabel(status) {
+            const labels = {
+                open: 'Abierto',
+                pending: 'Pendiente',
+                claimed: 'Reclamado',
+                closed: 'Cerrado'
+            };
+            return labels[status] || status;
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                high: 'Alta',
+                medium: 'Media',
+                low: 'Baja'
+            };
+            return labels[priority] || priority;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>
+ 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Sincronización - Helpdesk</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pedido {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .pedido.abierto { border-left: 4px solid #3498db; }
+        .pedido.proceso { border-left: 4px solid #f39c12; }
+        .pedido.cerrado { border-left: 4px solid #2ecc71; }
+        .estado-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: white;
+        }
+        .estado-abierto { background-color: #3498db; }
+        .estado-proceso { background-color: #f39c12; }
+        .estado-cerrado { background-color: #2ecc71; }
+        .refresh-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background-color: #2980b9;
+        }
+        .stats {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Sincronización - Helpdesk</h1>
+        <p>Esta página muestra en tiempo real los pedidos guardados en la base de datos compartida.</p>
+        
+        <button class="refresh-btn" onclick="refreshPedidos()">🔄 Refrescar Pedidos</button>
+        
+        <div class="stats" id="stats">
+            <strong>Estadísticas:</strong> Cargando...
+        </div>
+        
+        <div id="pedidos">
+            <p>Cargando pedidos...</p>
+        </div>
+    </div>
+
+    <script>
+        function refreshPedidos() {
+            try {
+                const pedidos = JSON.parse(localStorage.getItem('base_pedidos') || '[]');
+                displayPedidos(pedidos);
+                updateStats(pedidos);
+            } catch (error) {
+                console.error('Error al cargar pedidos:', error);
+                document.getElementById('pedidos').innerHTML = '<p style="color: red;">Error al cargar pedidos</p>';
+            }
+        }
+
+        function displayPedidos(pedidos) {
+            const container = document.getElementById('pedidos');
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = '<p>No hay pedidos en la base de datos.</p>';
+                return;
+            }
+
+            const pedidosHTML = pedidos.map(pedido => {
+                const estadoClass = `estado-${pedido.estado || 'abierto'}`;
+                const estadoTexto = getEstadoTexto(pedido.estado || 'abierto');
+                
+                return `
+                    <div class="pedido ${pedido.estado || 'abierto'}">
+                        <h3>Pedido #${pedido.id}</h3>
+                        <p><strong>Nombre:</strong> ${pedido.nombre}</p>
+                        <p><strong>Legajo:</strong> ${pedido.legajo}</p>
+                        <p><strong>Fecha:</strong> ${pedido.fecha}</p>
+                        <p><strong>Sector:</strong> ${getSectorTexto(pedido.sector)}</p>
+                        <p><strong>Sub-equipo:</strong> ${pedido.subEquipo}</p>
+                        <p><strong>Taller:</strong> ${getTallerTexto(pedido.taller)}</p>
+                        <p><strong>Tipo:</strong> ${getTipoTareaTexto(pedido.tipoTarea)}</p>
+                        <p><strong>Parte:</strong> ${pedido.parte}</p>
+                        <p><strong>Problema:</strong> ${pedido.problema}</p>
+                        <p><strong>Estado:</strong> <span class="estado-badge ${estadoClass}">${estadoTexto}</span></p>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = pedidosHTML;
+        }
+
+        function updateStats(pedidos) {
+            const total = pedidos.length;
+            const abiertos = pedidos.filter(p => p.estado === 'abierto').length;
+            const enProceso = pedidos.filter(p => p.estado === 'proceso').length;
+            const cerrados = pedidos.filter(p => p.estado === 'cerrado').length;
+
+            document.getElementById('stats').innerHTML = `
+                <strong>Estadísticas:</strong><br>
+                Total de pedidos: ${total}<br>
+                Abiertos: ${abiertos} | En Proceso: ${enProceso} | Cerrados: ${cerrados}
+            `;
+        }
+
+        function getEstadoTexto(estado) {
+            const estados = {
+                'abierto': 'Abierto',
+                'proceso': 'En Proceso',
+                'cerrado': 'Cerrado'
+            };
+            return estados[estado] || estado;
+        }
+
+        function getSectorTexto(sector) {
+            const sectores = {
+                'corrugadora': 'Corrugadora',
+                'ward_rdc': 'Ward RDC',
+                'ward_ffg': 'Ward FFG',
+                'c3000_rdc': 'C3000 RDC',
+                'c2000': 'C2000',
+                'cosedoras': 'Cosedoras',
+                'gral_planta': 'Gral de Planta',
+                'automotores': 'Automotores',
+                'expedicion': 'Expedicion',
+                'jumbo': 'Jumbo'
+            };
+            return sectores[sector] || sector;
+        }
+
+        function getTallerTexto(taller) {
+            const talleres = {
+                'mecanico': 'Mecánico',
+                'electrico': 'Eléctrico',
+                'herreria': 'Herrería',
+                'otros': 'Otros'
+            };
+            return talleres[taller] || taller;
+        }
+
+        function getTipoTareaTexto(tipoTarea) {
+            const tipos = {
+                'mantenimiento': 'Mantenimiento',
+                'seguridad': 'Seguridad',
+                'mejora': 'Mejora',
+                'reparacion': 'Reparación'
+            };
+            return tipos[tipoTarea] || tipoTarea;
+        }
+
+        // Escuchar cambios en localStorage
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'base_pedidos') {
+                console.log('Cambio detectado en la base de datos');
+                refreshPedidos();
+            }
+        });
+
+        // Escuchar eventos personalizados
+        window.addEventListener('pedidoGuardado', function(e) {
+            console.log('Pedido guardado:', e.detail);
+            refreshPedidos();
+        });
+
+        // Cargar pedidos al iniciar
+        refreshPedidos();
+
+        // Auto-refrescar cada 10 segundos
+        setInterval(refreshPedidos, 10000);
+    </script>
+</body>
+</html>
